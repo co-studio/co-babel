@@ -1,5 +1,5 @@
-import EventEmitter from 'events'
-import { engine } from 'co-kit'
+// import EventEmitter from 'events'
+import { EngineCore } from 'co-kit'
 import express from 'express'
 import bodyParser from 'body-parser'
 import catchPromiseErrors from 'async-error-catcher'
@@ -9,11 +9,12 @@ import catchPromiseErrors from 'async-error-catcher'
 import { parseEvents } from './events'
 
 const debug = require('debug')('messenger')
-class EngineMessenger extends EventEmitter {
+class EngineMessenger {
 
   constructor(config) {
-    super()
+    if (!config.core) throw new Error('EngineMessenger() requires argument kit.core!')
     this.type = 'messenger'
+    this.core = config.core
     this.APP_SECRET = config.APP_SECRET || ''
     this.ACCESS_TOKEN = config.ACCESS_TOKEN || ''
     this.VERIFY_TOKEN = config.VERIFY_TOKEN || ''
@@ -30,8 +31,11 @@ class EngineMessenger extends EventEmitter {
       console.error(err.stack || err)
       res.sendStatus(200)
     })
-    app.listen(app.get('port'), function() {
+    app.listen(app.get('port'), () => {
       console.log(`kit-engine-messenger: ${app.get('port')}`)
+      console.log(this)
+      console.log(`emitting: in:${this.type}`)
+      this.core.emitEvent(this.type, { type: 'postback' })
     })
   }
 
