@@ -1,3 +1,5 @@
+const debug = require('debug')('engine-messenger')
+
 /**
  *
  * All Messenger event types with properties
@@ -52,13 +54,14 @@ const eventProps = {
  *  }
  *
  */
-export function parseEvents(entry) {
-  if (!entry) {
+export function parseEvents(entries) {
+  if (!entries) {
     return []
   }
   else {
-    console.log(entry)
-    return entry.map(
+    return entries
+    .filter(entry => entry.messaging != undefined)
+    .map(
       ({ messaging }) =>
         messaging
         .map(parseEventType)

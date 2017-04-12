@@ -30,13 +30,9 @@ class EngineMessenger {
     const port = (process.env.PORT || 3434)
     app.set('port', port)
     app.use(bodyParser.json({ verify: this.verifyRequestSignature }))
-    app.use((req, res, next) => {
-      res.sendStatus(200)
-      next()
-    })
     app.get('/', (req, res) => res.send('kit-engine-messenger is good to go!'))
     app.get(this.endpoint, this.handleWebhookGet)
-    app.post(this.endpoint, catchPromiseErrors(this.handleWebhookPost))
+    app.post(this.endpoint, this.handleWebhookPost)
     app.use((err, req, res, next) => {
       console.error(err.stack || err)
       res.sendStatus(200)
@@ -67,13 +63,11 @@ class EngineMessenger {
   }
 
   handleWebhookPost = (req, res) => {
-    const events = parseEvents(req.body.entry)
-    events.map(this.emitEvent)
-  }
-
-  emitEvent = (event) => {
-    if (!event.type) throw new TypeError('incoming event has no type!')
-    this.core.emitEvent(this.type, event)
+    res.sendStatus(200)
+    const [ events ] = parseEvents(req.body.entry)
+    events.map(
+      event => this.core.emitEvent(this.type, event)
+    )
   }
 
   verifyRequestSignature = (req, res, buf) => {
