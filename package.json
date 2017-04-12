@@ -18,11 +18,14 @@
     "babel-preset-stage-0": "^6.16.0",
     "babel-register": "^6.18.0",
     "body-parser": "^1.17.1",
+    "colors": "^1.1.2",
     "crypto": "0.0.3",
     "express": "^4.15.2",
-    "localtunnel": "^1.8.2"
+    "localtunnel": "^1.8.2",
+    "request-promise": "^4.2.0"
   },
   "devDependencies": {
-    "debug": "^2.6.3"
+    "debug": "^2.6.3",
+    "localtunnel": "^1.8.2"
   }
 }

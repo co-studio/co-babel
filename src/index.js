@@ -1,45 +1,63 @@
-// import EventEmitter from 'events'
 import { EngineCore } from 'co-kit'
 import express from 'express'
 import bodyParser from 'body-parser'
 import catchPromiseErrors from 'async-error-catcher'
+import localtunnel from 'localtunnel'
+import colors from 'colors'
+import crypto from 'crypto'
 
-// import { listen } from './server'
-// import { verifyRequestSignature } from './routes'
 import { parseEvents } from './events'
+import * as settings from './settings'
 
-const debug = require('debug')('messenger')
+const debug = require('debug')('engine-messenger')
 class EngineMessenger {
 
   constructor(config) {
     if (!config.core) throw new Error('EngineMessenger() requires argument kit.core!')
     this.type = 'messenger'
     this.core = config.core
+    this.endpoint = '/kit/engine/messenger'
+    this.subdomain = config.subdomain || null
     this.APP_SECRET = config.APP_SECRET || ''
     this.ACCESS_TOKEN = config.ACCESS_TOKEN || ''
     this.VERIFY_TOKEN = config.VERIFY_TOKEN || ''
+    this.settings = settings
+    // settings.subscribe(this.ACCESS_TOKEN)
   }
 
   listen() {
     const app = express()
-    app.set('port', (process.env.PORT || 3434))
+    const port = (process.env.PORT || 3434)
+    app.set('port', port)
     app.use(bodyParser.json({ verify: this.verifyRequestSignature }))
+    app.use((req, res, next) => {
+      res.sendStatus(200)
+      next()
+    })
     app.get('/', (req, res) => res.send('kit-engine-messenger is good to go!'))
-    app.get('/kit/engine/messenger', catchPromiseErrors(this.handleWebhookGet))
-    app.post('/kit/engine/messenger', catchPromiseErrors(this.handleWebhookPost))
+    app.get(this.endpoint, this.handleWebhookGet)
+    app.post(this.endpoint, catchPromiseErrors(this.handleWebhookPost))
     app.use((err, req, res, next) => {
       console.error(err.stack || err)
       res.sendStatus(200)
     })
-    app.listen(app.get('port'), () => {
-      console.log(`kit-engine-messenger: ${app.get('port')}`)
-      console.log(this)
-      console.log(`emitting: in:${this.type}`)
-      this.core.emitEvent(this.type, { type: 'postback' })
+    app.listen(port, () => {
+      console.log(`kit-engine-messenger listening on`.cyan + ` port ${port}`.bold.magenta)
+      // this.core.emitEvent(this.type, { type: 'postback' })
+      if (process.env.NODE_ENV !== 'production') {
+        const opts = (this.subdomain)
+          ? { subdomain: this.subdomain }
+          : null
+        localtunnel(port, opts, (err, tunnel) => {
+          if (err) throw new Error(err)
+          console.log(`webhook url: `.cyan + `${tunnel.url}${this.endpoint}`.bold.magenta)
+        })
+      }
     })
   }
 
-  handleWebhookGet(req, res) {
+  // Arrow function to maintain 'this' reference
+  handleWebhookGet = (req, res) => {
     if (req.query['hub.verify_token'] === this.VERIFY_TOKEN) {
       res.send(req.query['hub.challenge'])
     }
@@ -48,12 +66,17 @@ class EngineMessenger {
     }
   }
 
-  handleWebhookPost(req, res) {
+  handleWebhookPost = (req, res) => {
     const events = parseEvents(req.body.entry)
     events.map(this.emitEvent)
   }
 
-  verifyRequestSignature(req, res, buf) {
+  emitEvent = (event) => {
+    if (!event.type) throw new TypeError('incoming event has no type!')
+    this.core.emitEvent(this.type, event)
+  }
+
+  verifyRequestSignature = (req, res, buf) => {
     let signature = req.headers["x-hub-signature"];
     if (!signature) {
       throw new Error('Unable to validate request signature!')
@@ -69,19 +92,6 @@ class EngineMessenger {
         throw new Error("Couldn't validate the request signature.");
       }
     }
-  }
-
-  // listen() {
-  //   setTimeout(this.emit, 1000)
-  //   setTimeout(this.emit, 5000)
-  //   // while(true) {
-  //   // }
-  //   return
-  // },
-
-  emitEvent(event) {
-    if (!event.type) throw new TypeError('incoming event has no type!')
-    this.emit(`in:${this.type}`, event)
   }
 
   send(pkt) {

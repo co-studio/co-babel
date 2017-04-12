@@ -57,8 +57,9 @@ export function parseEvents(entry) {
     return []
   }
   else {
+    console.log(entry)
     return entry.map(
-      messaging =>
+      ({ messaging }) =>
         messaging
         .map(parseEventType)
         .map(parseTypeProps)
