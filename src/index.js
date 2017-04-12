@@ -25,7 +25,8 @@ class EngineMessenger {
     // settings.subscribe(this.ACCESS_TOKEN)
   }
 
-  listen() {
+  listen = () => {
+    this.core.listenSend(this, this.send)
     const app = express()
     const port = (process.env.PORT || 3434)
     app.set('port', port)
@@ -39,7 +40,6 @@ class EngineMessenger {
     })
     app.listen(port, () => {
       console.log(`kit-engine-messenger listening on`.cyan + ` port ${port}`.bold.magenta)
-      // this.core.emitEvent(this.type, { type: 'postback' })
       if (process.env.NODE_ENV !== 'production') {
         const opts = (this.subdomain)
           ? { subdomain: this.subdomain }
@@ -69,7 +69,7 @@ class EngineMessenger {
     res.sendStatus(200)
     const [ events ] = parseEvents(req.body.entry)
     events.map(
-      event => this.core.emitEvent(this.type, event)
+      event => this.core.emitReceive(this.type, event)
     )
   }
 
@@ -91,8 +91,8 @@ class EngineMessenger {
     }
   }
 
-  send(pkt) {
-    debug(pkt)
+  send(event) {
+    debug('send event:\n%O', event)
   }
 
 }
