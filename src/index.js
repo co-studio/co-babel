@@ -46,6 +46,9 @@ class EngineMessenger {
           : null
         localtunnel(port, opts, (err, tunnel) => {
           if (err) throw new Error(err)
+          tunnel.on('error', (err) => {
+            throw new Error(err)
+          })
           console.log(`webhook url: `.cyan + `${tunnel.url}${this.endpoint}`.bold.magenta)
         })
       }

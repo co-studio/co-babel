@@ -87,8 +87,8 @@ const parseTypeProps = ({ type, event }) => ({
 const parseEventMeta = (eventPacket) => {
   const { event } = eventPacket
   eventPacket['meta'] = {
-    sender: event.sender,
-    recipient: event.recipient,
+    receive: event.recipient.id,
+    send: event.sender.id,
     timestamp: event.timestamp,
   }
   return eventPacket
