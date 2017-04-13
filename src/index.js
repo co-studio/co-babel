@@ -103,6 +103,7 @@ class EngineMessenger {
 
   sendEvent = async (event) => {
     debug('sending event.body:\n%O', event.body)
+    debug('-----')
     const body = await request(event.body).catch(this.handleError)
     if (body.error) {
       throw new Error(body.error)
