@@ -5,9 +5,11 @@ import catchPromiseErrors from 'async-error-catcher'
 import localtunnel from 'localtunnel'
 import colors from 'colors'
 import crypto from 'crypto'
+import request from 'request-promise'
 
 import { parseEvents } from './events'
 import * as settings from './settings'
+import MessengerMessage from './templates'
 
 const debug = require('debug')('engine-messenger')
 class EngineMessenger {
@@ -22,6 +24,7 @@ class EngineMessenger {
     this.ACCESS_TOKEN = config.ACCESS_TOKEN || ''
     this.VERIFY_TOKEN = config.VERIFY_TOKEN || ''
     this.settings = settings
+    this.MessengerMessage = MessengerMessage.bind(null, this.ACCESS_TOKEN)
     // settings.subscribe(this.ACCESS_TOKEN)
   }
 
@@ -91,8 +94,28 @@ class EngineMessenger {
     }
   }
 
-  send(event) {
-    debug('send event:\n%O', event)
+  send = (packet) => {
+    debug('send packet:\n%O', packet)
+    packet.events
+    .map(this.formatEvent)
+    .map(this.sendEvent)
+  }
+
+  sendEvent = async (event) => {
+    debug('sending event.body:\n%O', event.body)
+    const body = await request(event.body).catch(this.handleError)
+    if (body.error) {
+      throw new Error(body.error)
+    }
+  }
+
+  formatEvent = (event) => {
+    debug('formatting event:\n%O', event)
+    return new this.MessengerMessage(event)
+  }
+
+  handleError = (err) => {
+    throw new Error(err)
   }
 
 }

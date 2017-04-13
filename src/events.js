@@ -66,6 +66,8 @@ export function parseEvents(entries) {
         messaging
         .map(parseEventType)
         .map(parseTypeProps)
+        .map(parseMessageText)
+        .map(parsePostbackPayload)
         .map(parseEventMeta)
     )
   }
@@ -75,22 +77,36 @@ const types = Object.keys(eventProps)
 
 function parseEventType(event) {
   const [ type ] = types.filter(type => event[type])
-  return { type, event }
+  return { type, _event: event }
 }
 
-const parseTypeProps = ({ type, event }) => ({
+const parseTypeProps = ({ type, _event }) => ({
   type,
-  event,
-  [type]: event[type]
+  [type]: _event[type],
+  _event,
 })
 
+const parseMessageText = (eventPacket) => {
+  if (eventPacket.type === 'message') {
+    eventPacket.message = eventPacket.message.text
+  }
+  return eventPacket
+}
+
+const parsePostbackPayload = (eventPacket) => {
+  if (eventPacket.type === 'postback') {
+    eventPacket.postback = eventPacket.postback.payload
+  }
+  return eventPacket
+}
+
 const parseEventMeta = (eventPacket) => {
-  const { event } = eventPacket
+  const { _event } = eventPacket
   eventPacket['meta'] = {
     src: 'messenger',
-    receive: event.recipient.id,
-    send: event.sender.id,
-    timestamp: event.timestamp,
+    receive: _event.recipient.id,
+    send: _event.sender.id,
+    timestamp: _event.timestamp,
   }
   return eventPacket
 }
