@@ -17,6 +17,7 @@
   },
   "devDependencies": {
     "babel-eslint": "^7.2.2",
+    "babel-preset-flow": "^6.23.0",
     "eslint": "^3.19.0",
     "eslint-config-standard": "^10.2.0",
     "eslint-plugin-babel": "^4.1.1",
